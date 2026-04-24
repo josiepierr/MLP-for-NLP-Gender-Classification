@@ -2,3 +2,8 @@ spacy
 gensim
 pyLDAvis
 bertopic
+matplotlib
+seaborn
+wordcloud
+fr-core-news-sm
+fr_core_news_md
