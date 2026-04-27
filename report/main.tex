@@ -1,0 +1,280 @@
+\documentclass{article}
+
+% NeurIPS 2024 style — télécharger neurips_2024.sty depuis Overleaf
+% https://www.overleaf.com/latex/templates/neurips-2024/tpsbbrdqcmsh
+\usepackage[final]{neurips_2024}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{natbib}
+
+% ── Métadonnées ───────────────────────────────────────────────────────────────
+\title{Analyse computationnelle du cadrage partisan et des variations
+stylistiques dans les professions de foi (Législatives 1993)}
+
+\author{%
+  Dominique Noutsougankom\\
+  ENSAE Paris\\
+  \texttt{noutsougankomladominique@gmail.com}
+}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+\maketitle
+
+% ── Résumé ───────────────────────────────────────────────────────────────────
+\begin{abstract}
+Les professions de foi constituent un instrument central de communication
+politique dans les élections législatives de la Cinquième République française.
+Ce travail propose une analyse computationnelle du corpus Archelec des
+législatives de 1993 (5\,835 documents) articulée en deux axes complémentaires.
+D'une part, nous utilisons la modélisation thématique --- LDA et BERTopic ---
+pour identifier les structures de sujets latentes et mesurer la spécialisation
+partisane thématique.
+D'autre part, nous examinons l'existence d'un signal stylistique associé au
+sexe des candidats à travers l'extraction de dix features stylistiques,
+des tests non-paramétriques contrôlés par l'appartenance partisane, et une
+tâche de classification supervisée.
+Nos résultats montrent que~\ldots % TODO : compléter après exécution
+\end{abstract}
+
+% ── 1. Introduction ───────────────────────────────────────────────────────────
+\section{Introduction}
+\label{sec:intro}
+
+Les professions de foi constituent un observatoire privilégié du discours
+politique : destinées à l'ensemble du corps électoral, elles condensent les
+priorités programmatiques, les positionnements idéologiques et les stratégies
+rhétoriques des candidats.
+L'approche \emph{Text as Data} \citep{grimmer2013text} a profondément renouvelé
+l'étude quantitative des textes politiques en permettant d'identifier des
+structures thématiques latentes, de comparer des registres lexicaux et
+d'estimer la tonalité émotionnelle des discours.
+
+Nous formulons la question de recherche suivante : les différences discursives
+observables dans les professions de foi relèvent-elles principalement de la
+\emph{spécialisation thématique} des partis ou d'un \emph{cadrage différencié}
+de thèmes partagés~? Et dans quelle mesure ces variations sont-elles associées
+aux caractéristiques socio-démographiques --- en particulier le sexe --- des
+candidats~?
+
+% ── 2. Données ────────────────────────────────────────────────────────────────
+\section{Corpus et données}
+\label{sec:data}
+
+\subsection{Le corpus Archelec}
+
+Le corpus Archelec \citep{archelec} rassemble les professions de foi des
+candidats aux élections de la Cinquième République française, numérisées
+et transcrites par OCR depuis les archives Sciences Po / CEVIPOF.
+Nous utilisons le sous-ensemble des \textbf{législatives de 1993} :
+5\,842 fichiers texte associés à un fichier de métadonnées CSV (43 colonnes
+incluant le parti, le soutien, le sexe, l'âge et la profession du candidat).
+
+\subsection{Prétraitement}
+\label{sec:preproc}
+
+Après chargement et appariement textes/métadonnées, le corpus final comprend
+\textbf{5\,835 documents} (retrait de 7 bulletins de vote et 2 documents
+inférieurs à 50 mots).
+Le prétraitement comprend : normalisation des artefacts OCR, tokenisation,
+suppression des mots-outils (liste spaCy + liste personnalisée de 28 termes
+spécifiques au corpus électoral), lemmatisation avec \texttt{fr\_core\_news\_md}
+\citep{spacy}.
+Le vocabulaire final compte 50\,509 lemmes uniques pour une moyenne de
+310 tokens par document.
+
+\subsection{Description du corpus}
+
+Le tableau~\ref{tab:corpus} résume la distribution du corpus par famille
+partisane et par sexe.
+
+\begin{table}[h]
+\caption{Distribution du corpus (législatives 1993)}
+\label{tab:corpus}
+\centering
+\begin{tabular}{lrrr}
+\toprule
+Famille partisane & Documents & \% femmes & MSTTR moyen \\
+\midrule
+Écologistes                          & 1\,129 & -- & 0.883 \\
+Droite parlementaire (RPR/UDF)       & 1\,062 & -- & 0.849 \\
+Non mentionné                        & 1\,010 & -- & 0.859 \\
+Front national                       &   651  & -- & 0.854 \\
+PCF                                  &   544  & -- & 0.862 \\
+Gauche gouvernementale (PS/MRG/MDC)  &   407  & -- & 0.861 \\
+Extrême gauche                       &   396  & -- & 0.825 \\
+Autres / Indépendants                &   636  & -- & 0.856 \\
+\midrule
+\textbf{Total}                       & \textbf{5\,835} & \textbf{11.0\%} & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ── 3. Modélisation thématique ────────────────────────────────────────────────
+\section{Modélisation thématique}
+\label{sec:topics}
+
+\subsection{LDA}
+
+Nous appliquons la \emph{Latent Dirichlet Allocation} \citep{blei2003lda}
+sur l'ensemble du corpus.
+Le dictionnaire filtré retient les termes présents dans au moins 10 documents
+et dans au plus 60\,\% du corpus, aboutissant à un vocabulaire de~\ldots lemmes.
+Le nombre de topics est sélectionné par maximisation du score de cohérence
+$C_v$ \citep{roder2015coherence} sur une grille $K \in \{5, 8, 10, 12, 15\}$
+(Figure~\ref{fig:coherence}).
+Le modèle retenu ($K = $~\textit{TODO}) est entraîné avec 20 passes.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.55\textwidth]{../figures/02_lda_coherence.png}
+\caption{Cohérence $C_v$ en fonction du nombre de topics $K$ (LDA).}
+\label{fig:coherence}
+\end{figure}
+
+\subsection{BERTopic}
+
+BERTopic \citep{grootendorst2022bertopic} combine des embeddings de phrases
+(\texttt{paraphrase-multilingual-MiniLM-L12-v2}), une réduction de
+dimensionnalité UMAP et un clustering HDBSCAN.
+Ce pipeline est particulièrement adapté aux textes OCR bruités car les
+embeddings encodent la sémantique au-delà du lexique exact.
+Après réduction à 12 topics, les principaux clusters identifiés sont~\ldots
+% TODO : décrire les topics obtenus
+
+\subsection{Spécialisation partisane}
+
+La Figure~\ref{fig:spec} présente l'indice de spécialisation par parti et par
+topic, calculé comme le ratio entre la proportion du topic dans un parti et
+sa proportion dans le corpus global.
+% TODO : insérer observations clés
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../figures/02_lda_specialisation.png}
+\caption{Indice de spécialisation thématique par parti (LDA, ratio à la
+distribution globale ; rouge = sur-représentation, bleu = sous-représentation).}
+\label{fig:spec}
+\end{figure}
+
+% ── 4. Variations stylistiques ────────────────────────────────────────────────
+\section{Variations stylistiques et signal de genre}
+\label{sec:style}
+
+\subsection{Features extraites}
+
+Nous extrayons dix features stylistiques interprétables pour chaque document
+(Tableau~\ref{tab:features}).
+
+\begin{table}[h]
+\caption{Features stylistiques extraites}
+\label{tab:features}
+\centering
+\begin{tabular}{ll}
+\toprule
+Feature & Description \\
+\midrule
+\texttt{mean\_sent\_len}  & Longueur moyenne des phrases (mots) \\
+\texttt{std\_sent\_len}   & Variabilité de la longueur des phrases \\
+\texttt{mean\_word\_len}  & Longueur moyenne des mots (caractères) \\
+\texttt{msttr}            & Richesse lexicale (MSTTR, fenêtre 100) \\
+\texttt{pron\_1sg\_rate}  & Fréquence pronoms 1\textsuperscript{ère} pers. sing. (\%) \\
+\texttt{pron\_1pl\_rate}  & Fréquence pronoms 1\textsuperscript{ère} pers. plur. (\%) \\
+\texttt{modal\_rate}      & Fréquence verbes modaux (\%) \\
+\texttt{adj\_rate}        & Fréquence adjectifs (\%) \\
+\texttt{flesch\_fr}       & Score de lisibilité Flesch (adapté français) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparaison homme / femme}
+
+Le corpus présente un déséquilibre marqué : 4\,554 hommes (88\,\%) contre
+643 femmes (12\,\%). L'analyse descriptive (Figure~\ref{fig:violins}) et
+les tests de Mann-Whitney U avec correction de Bonferroni identifient les
+features significativement différentes entre les deux groupes.
+% TODO : décrire les résultats des tests
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../figures/04_style_violins.png}
+\caption{Distributions stylistiques par sexe (bleu : hommes, rose : femmes).}
+\label{fig:violins}
+\end{figure}
+
+\subsection{Contrôle de l'appartenance partisane}
+
+Afin d'isoler l'effet du sexe des différences liées aux partis, nous estimons
+des régressions OLS de la forme :
+
+\[
+\text{feature}_i = \beta_0 + \beta_1 \cdot \mathbb{1}[\text{femme}]_i
++ \sum_{p} \gamma_p \cdot \mathbb{1}[\text{parti}_p]_i + \varepsilon_i
+\]
+
+Le coefficient $\beta_1$ mesure l'écart stylistique entre femmes et hommes
+toutes choses égales par ailleurs (Figure~\ref{fig:coefs}).
+% TODO : commenter les résultats
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{../figures/04_style_regression_coefs.png}
+\caption{Coefficients de la régression OLS pour chaque feature stylistique
+(contrôle du parti ; rose : significatif à 5\,\%).}
+\label{fig:coefs}
+\end{figure}
+
+\subsection{Classification supervisée}
+
+Une régression logistique entraînée sur les dix features stylistiques,
+évaluée en validation croisée stratifiée (5 folds), obtient un AUC de~\ldots
+(baseline = 0.88). Ces résultats suggèrent que~\ldots
+% TODO : compléter avec les résultats
+
+% ── 5. Discussion ─────────────────────────────────────────────────────────────
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Spécialisation thématique vs cadrage différencié}
+
+% TODO : synthétiser les résultats du topic modeling
+
+\subsection{Signal stylistique de genre}
+
+% TODO : synthétiser les résultats de l'analyse stylistique
+
+\subsection{Limites}
+
+Plusieurs limites méritent d'être soulignées.
+Premièrement, la qualité variable des transcriptions OCR peut introduire
+du bruit dans les analyses lexicales, en particulier pour les documents
+les plus anciens ou de moindre qualité.
+Deuxièmement, le fort déséquilibre homme/femme (88\,\%/12\,\%)
+limite la puissance statistique des comparaisons de genre.
+Troisièmement, l'analyse se limite à une seule élection (1993) ; une
+extension temporelle permettrait d'étudier l'évolution des patterns.
+
+% ── 6. Conclusion ─────────────────────────────────────────────────────────────
+\section{Conclusion}
+\label{sec:conclusion}
+
+% TODO : rédiger la conclusion après exécution des notebooks
+
+% ── Bibliographie ─────────────────────────────────────────────────────────────
+\bibliographystyle{abbrvnat}
+\bibliography{references}
+
+\end{document}
