@@ -123,52 +123,118 @@ Autres / Indépendants                &   636  & -- & 0.856 \\
 \end{tabular}
 \end{table}
 
-% ── 3. Modélisation thématique ────────────────────────────────────────────────
-\section{Modélisation thématique}
+% -------------------------------------------------------------------
+% 3. Modelisation thematique
+% -------------------------------------------------------------------
+\section{Mod\'{e}lisation th\'{e}matique}
 \label{sec:topics}
 
-\subsection{LDA}
+Nous mettons en \oe{}uvre trois approches de mod\'{e}lisation th\'{e}matique.
+La LDA et la NMF travaillent sur des repr\'{e}sentations sac-de-mots~;
+BERTopic s'appuie sur des embeddings contextuels.
 
-Nous appliquons la \emph{Latent Dirichlet Allocation} \citep{blei2003lda}
-sur l'ensemble du corpus.
-Le dictionnaire filtré retient les termes présents dans au moins 10 documents
-et dans au plus 60\,\% du corpus, aboutissant à un vocabulaire de~\ldots lemmes.
-Le nombre de topics est sélectionné par maximisation du score de cohérence
-$C_v$ \citep{roder2015coherence} sur une grille $K \in \{5, 8, 10, 12, 15\}$
-(Figure~\ref{fig:coherence}).
-Le modèle retenu ($K = $~\textit{TODO}) est entraîné avec 20 passes.
+\subsection{LDA avec scikit-learn ($K = 10$, $C_v = 0.654$)}
+
+Apr\`{e}s filtrage, le \texttt{CountVectorizer} retient 7\,542 termes
+(termes pr\'{e}sents dans au moins 10 documents et dans au plus 60\,\% du corpus).
+Le score de coh\'{e}rence $C_v$ \citep{roder2015coherence} est calcul\'{e} pour
+$K \in \{5, 8, 10, 12, 15\}$ : il atteint son maximum \`{a} $K = 10$
+($C_v = 0.654$, Figure~\ref{fig:coherence}), valeur retenue pour le mod\`{e}le
+final entra\^{i}n\'{e} sur 20~it\'{e}rations.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.55\textwidth]{../figures/02_lda_coherence.png}
-\caption{Cohérence $C_v$ en fonction du nombre de topics $K$ (LDA).}
+\includegraphics[width=0.90\textwidth]{../figures/02_lda_coherence.png}
+\caption{Coh\'{e}rence $C_v$ (gauche) et perplexit\'{e} (droite) en fonction
+de $K$. Le maximum de coh\'{e}rence est atteint \`{a} $K = 10$.}
 \label{fig:coherence}
 \end{figure}
 
-\subsection{BERTopic}
+La lecture des mots les plus repr\'{e}sentatifs de chaque th\`{e}me
+(Tableau~\ref{tab:topics}) r\'{e}v\`{e}le des structures th\'{e}matiques
+coh\'{e}rentes, mais aussi deux artefacts notables du corpus.
+Le premier est un th\`{e}me constitu\'{e} quasi-exclusivement de mots allemands
+(\textit{die, der, und, f\"{u}r, den\ldots}) : des candidats d'Alsace-Moselle
+ont r\'{e}dig\'{e} leur profession de foi en allemand, que la LDA isole comme
+un th\`{e}me linguistique distinct.
+Le second correspond au \emph{Parti de la Loi Naturelle} (mouvement Maharishi /
+M\'{e}ditation Transcendantale), qui pr\'{e}sentait des candidats dans toutes les
+circonscriptions en 1993 avec un vocabulaire tr\`{e}s sp\'{e}cifique
+(\textit{loi naturelle, maharishi, v\'{e}dique}).
+Ces deux th\`{e}mes illustrent la richesse et la diversit\'{e} du corpus Archelec.
 
-BERTopic \citep{grootendorst2022bertopic} combine des embeddings de phrases
-(\texttt{paraphrase-multilingual-MiniLM-L12-v2}), une réduction de
-dimensionnalité UMAP et un clustering HDBSCAN.
-Ce pipeline est particulièrement adapté aux textes OCR bruités car les
-embeddings encodent la sémantique au-delà du lexique exact.
-Après réduction à 12 topics, les principaux clusters identifiés sont~\ldots
-% TODO : décrire les topics obtenus
+\begin{table}[h]
+\caption{Dix th\`{e}mes LDA ($K = 10$) et mots les plus repr\'{e}sentatifs}
+\label{tab:topics}
+\centering
+\small
+\begin{tabular}{clp{7.5cm}}
+\toprule
+\# & Label & Mots repr\'{e}sentatifs \\
+\midrule
+0 & Lutte ouvri\`{e}re et patronat
+  & travailleur, patron, patronat, salaire, sacrifice, bourgeoisie \\
+1 & Programme de gauche radicale
+  & d\'{e}fense, suppression, cr\'{e}ation, lutte, populaire, r\'{e}tablissement \\
+2 & Discours citoyen et Europe
+  & citoyen, pays, droit, pouvoir, europe, public, europ\'{e}en \\
+3 & Positionnement partisan (PCF/gauche)
+  & communiste, droite, gauche, parti, vote, force, socialiste \\
+4 & \textit{Textes en allemand (Alsace-Moselle)}
+  & \textit{die, der, und, f\"{u}r, den, sie, von, das} \\
+5 & Immigration et pr\'{e}f\'{e}rence nationale
+  & immigration, immigr\'{e}, imp\^{o}t, front, r\'{e}tablir, nationalit\'{e} \\
+6 & Parti de la Loi Naturelle (TM)
+  & loi naturelle, maharishi, v\'{e}dique, coh\'{e}rence, criminalit\'{e} \\
+7 & Discours politique g\'{e}n\'{e}raliste
+  & maire, d\'{e}put\'{e}, conseiller, vie, confiance, pays, avenir \\
+8 & \'{E}cologie politique (Verts/G\'{e}n\'{e}ration \'{E}cologie)
+  & \'{e}cologie, vert, \'{e}cologiste, entente, g\'{e}n\'{e}ration, environnement \\
+9 & Animaux et nature (CPNT)
+  & animal, nature, rassemblement, chasse, corrida, vivisection \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{Spécialisation partisane}
-
-La Figure~\ref{fig:spec} présente l'indice de spécialisation par parti et par
-topic, calculé comme le ratio entre la proportion du topic dans un parti et
-sa proportion dans le corpus global.
-% TODO : insérer observations clés
+Les indices de sp\'{e}cialisation (Figure~\ref{fig:spec}) confirment ces
+interpr\'{e}tations : le th\`{e}me 5 (immigration) est sur-repr\'{e}sent\'{e}
+au Front national d'un facteur 8.35 ; le th\`{e}me 0 (lutte ouvri\`{e}re)
+est sur-repr\'{e}sent\'{e} chez l'extr\^{e}me gauche d'un facteur 13.45~;
+les th\`{e}mes 8 et 9 capturent le bloc \'{e}cologiste (Verts/G\'{e}n\'{e}ration
+\'{E}cologie vs CPNT)~; le PCF se concentre sur les services publics et la
+mobilisation partisane.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{../figures/02_lda_specialisation.png}
-\caption{Indice de spécialisation thématique par parti (LDA, ratio à la
-distribution globale ; rouge = sur-représentation, bleu = sous-représentation).}
+\caption{Indice de sp\'{e}cialisation th\'{e}matique par parti (LDA,
+ratio \`{a} la distribution globale~; rouge~=~sur-repr\'{e}sentation,
+bleu~=~sous-repr\'{e}sentation).}
 \label{fig:spec}
 \end{figure}
+
+\subsection{NMF}
+
+La NMF appliqu\'{e}e sur la matrice TF-IDF confirme les grandes structures
+d\'{e}tect\'{e}es par la LDA, avec des th\`{e}mes plus nets.
+Elle distingue notamment mieux les deux courants au sein de l'\'{e}cologie~:
+le CPNT (animaux, chasse, corrida) est clairement s\'{e}par\'{e} des Verts
+et de G\'{e}n\'{e}ration \'{E}cologie.
+Le FN, l'extr\^{e}me gauche (Lutte Ouvri\`{e}re, LCR) et le PCF constituent
+\'{e}galement des clusters NMF tr\`{e}s distincts.
+
+\subsection{BERTopic}
+
+BERTopic \citep{grootendorst2022bertopic} encode chaque document dans un espace
+s\'{e}mantique de 384~dimensions via \texttt{paraphrase-multilingual-MiniLM-L12-v2}
+\citep{reimers2019sbert}, puis applique une r\'{e}duction UMAP et un clustering HDBSCAN.
+Sur ce corpus, BERTopic ne d\'{e}tecte que 5~clusters, dont un tr\`{e}s dominant
+qui regroupe 72\,\% des documents (4\,230/5\,835).
+Cela s'explique par la forte homog\'{e}n\'{e}it\'{e} s\'{e}mantique des professions
+de foi~: le vocabulaire politique commun \`{a} tous les candidats rend la
+discrimination par clustering dans l'espace d'embedding difficile.
+Les approches sac-de-mots (LDA, NMF), en exploitant les diff\'{e}rences lexicales
+de surface, segmentent mieux ce corpus particulier.
 
 % ── 4. Variations stylistiques ────────────────────────────────────────────────
 \section{Variations stylistiques et signal de genre}
