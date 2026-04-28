@@ -81,7 +81,8 @@ EXTRA_STOPS = {
     # Vocabulaire administratif électoral (présent dans 100 % des PF)
     "suppléant", "suppléante", "scrutin",
     "circonscription", "departement", "département",
-    "candidature", "legislatif", "législatif", "mars", "election",
+    "candidature", "legislatif", "législatif", "mars", "election", "député", "jean", "maire",
+    "conseiller",
     # Sigles partisans résiduels
     "rpr", "udf", "pcf", "mrg", "mdc", "cpnt",
 }
