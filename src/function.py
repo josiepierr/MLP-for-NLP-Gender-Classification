@@ -70,21 +70,124 @@ def clean_text_for_embeddings(text: str) -> str:
 # ============================================================
 
 # Stopwords spécifiques au corpus électoral (artefacts OCR + formules rhétoriques)
+# EXTRA_STOPS = {
+#     "po", "cevipof", "cevipov", "imp", "imprimerie", "offset", "prefet",
+#     "préfet", "vu",
+#     "madame", "monsieur", "mademoiselle",
+#     "cher", "chère", "chers", "chères",
+#     "compatriote", "compatriotes", "concitoyen", "concitoyenne", "concitoyens",
+#     "suppléant", "suppléante", "scrutin",
+#     "circonscription", "departement", "département",
+#     "candidature", "legislatif", "législatif", "mars", "election", "député", "jean",
+#     'front', 'national', 'parti', 'communiste', 'gauche', 'droite',
+#     'rassemblement', 'socialiste', 'democratique', 'independant',
+#     'jean', 'pierre', 'michel', 'jacques', 'bernard', 'maire',
+#     'conseiller', 'general', 'president', 'depute', 'dimanche', 'tour',
+#     "rpr", "udf", "pcf", "mrg", "mdc", "cpnt",
+# }
+
 EXTRA_STOPS = {
-    # Artefacts archivistiques
-    "po", "cevipof", "cevipov", "imp", "imprimerie", "offset", "prefet",
-    "préfet", "vu",
-    # Formules d'adresse omniprésentes
+
+    # --- Artefacts archivistiques Archelec ---
+    "po", "cevipof", "cevipov", "imp", "imprimerie", "offset",
+    "prefet", "préfet", "vu", "sciences", "fonds",
+
+    # --- Formules d'adresse ---
     "madame", "monsieur", "mademoiselle",
     "cher", "chère", "chers", "chères",
-    "compatriote", "compatriotes", "concitoyen", "concitoyenne", "concitoyens",
-    # Vocabulaire administratif électoral (présent dans 100 % des PF)
+    "compatriote", "compatriotes",
+    "concitoyen", "concitoyenne", "concitoyens",
+
+    # --- Vocabulaire électoral générique ---
+    "candidat", "candidate", "candidats", "candidates", "candidature",
     "suppléant", "suppléante", "scrutin",
+    "election", "elections", "législatif", "legislatif",
+    "législatives", "legislatives",
     "circonscription", "departement", "département",
-    "candidature", "legislatif", "législatif", "mars", "election", "député", "jean", "maire",
-    "conseiller",
-    # Sigles partisans résiduels
-    "rpr", "udf", "pcf", "mrg", "mdc", "cpnt",
+    "republique", "république", "francaise", "française",
+    "profession", "foi", "préfet",
+    "mars", "votez", "voter",
+
+    # --- Mots politiques génériques (thème, pas parti) ---
+    "politique", "pays", "france", "français", "francais",
+    "française", "francaise",
+
+    # --- Prénoms très fréquents ---
+    "jean", "pierre", "michel", "jacques", "bernard",
+    "christian", "philippe", "claude", "paul", "andré",
+
+    # --- Fonctions électives génériques ---
+    "maire", "député", "depute", "conseiller", "président",
+    "president", "général", "general", "ministre",
+    "dimanche", "tour",
+
+    # --- Sigles partisans ---
+    "rpr", "udf", "cds", "cni", "cnip", "pr",
+    "ps", "mrg", "mdc", "prg",
+    "pcf",
+    "fn", "fnp",
+    "lo", "lcr", "pt",
+    "ge", "nerna", "mpf", "cpnt",
+
+    # --- Stopwords grammaticaux français non couverts par spaCy ---
+    "qu", "c", "d", "j", "l", "m", "n", "s", "t", "y",
+    "une", "afin", "ainsi", "aussi", "encore", "déjà",
+    "donc", "dont", "celui", "celle", "ceux",
+    "toute", "toutes", "tous", "tout",
+    "cette", "cet", "entre", "sous", "sans", "très",
+    "bien", "moins", "plus", "même",
+
+    # --- Stopwords allemands essentiels ---
+    "die", "der", "und", "für", "den", "sie", "von",
+    "das", "eine", "ist", "werden", "wir", "durch",
+    "ein", "zum", "zur", "bei", "nach", "bis",
+    "aus", "mit", "vom", "sich", "ich", "auf",
+    "haben", "sind", "dem", "nicht", "wird",
+    "unsere", "unserer", "ihrer", "märz",
+
+    "rassemblement", "république", "republique", "union",
+    "démocratie", "democratie", "française", "francaise",
+    "centre", "démocrates", "democrates", "sociaux", "indépendants",
+    "independants", "paysans", "parti", "républicain", "republicain",
+    "chrétienne", "chretienne", "socialiste", "mouvement", "radicaux",
+    "citoyens", "citoyen", "gauche", "droite", "national", "front"
+
+    # Front national
+    "front",
+    "national",
+
+
+    "rpr",
+    "udf",
+    "cds",
+    "cni",
+    "cnip",
+    "pr",
+
+    # Gauche gouvernementale
+    "ps",
+    "mrg",
+    "mdc",
+    "prg",
+
+    # PCF
+    "pcf",
+
+    # Front national
+    "fn",
+
+    # Extrême gauche
+    "lo",
+    "lcr",
+    "pt",
+
+    "vouloir", "pouvoir", "devoir", "falloir", "savoir", "faire", "dire",
+    "aller", "voir", "venir", "mettre", "donner", "prendre", "tenir",
+    "porter", "passer", "comprendre", "être", "avoir", "sembler",
+    "paraître", "devenir", "rester", "exister", "appeler", "demander",
+    "proposer", "permettre", "attendre", "espérer", "penser", "croire",
+    "reprendre", "assurer", "agir", "paraître", "sembler", "revenir",
+    "partir", "arriver", "devoir", "falloir", "vouloir", "pouvoir"
 }
 
 
