@@ -4,17 +4,17 @@ function.py
 Fonctions utilitaires pour le projet NLP Archelec.
 Utilisées dans les notebooks d'analyse du corpus Archelec 1993.
 """
-
+ 
 import re
 import unicodedata
 import numpy as np
 import pandas as pd
 
-
+ 
 # ============================================================
 # 1. NETTOYAGE DES TEXTES
 # ============================================================
-
+ 
 # Patterns OCR spécifiques au corpus Archelec / Sciences Po CEVIPOF
 OCR_PATTERNS = [
     (r"sciences\s+po\s*/\s*fonds\s+cevipof", " "),
@@ -26,8 +26,8 @@ OCR_PATTERNS = [
     (r"imp\.\s*[^\n]*",                       " "),
     (r"offset[^\n]*",                         " "),
 ]
-
-
+ 
+ 
 def clean_text_for_lda(text: str) -> str:
     """
     Nettoyage orienté LDA (bag-of-words) :
@@ -36,7 +36,7 @@ def clean_text_for_lda(text: str) -> str:
     - suppression des symboles parasites et de la ponctuation
     - suppression des chiffres isolés
     - normalisation des espaces
-
+ 
     La casse est perdue volontairement — LDA travaille sur
     des fréquences de lemmes, pas sur la forme de surface.
     """
@@ -48,8 +48,8 @@ def clean_text_for_lda(text: str) -> str:
     text = re.sub(r"[^\w\s]",     " ", text)
     text = re.sub(r"\s+",         " ", text).strip()
     return text
-
-
+ 
+ 
 def clean_text_for_embeddings(text: str) -> str:
     """
     Nettoyage orienté embeddings (BERTopic / SentenceTransformer) :
@@ -63,36 +63,20 @@ def clean_text_for_embeddings(text: str) -> str:
     text = re.sub(r"[^\w\s]",     " ", text)
     text = re.sub(r"\s+",         " ", text).strip()
     return text
-
-
+ 
+ 
 # ============================================================
 # 2. LEMMATISATION
 # ============================================================
 
-# Stopwords spécifiques au corpus électoral (artefacts OCR + formules rhétoriques)
-# EXTRA_STOPS = {
-#     "po", "cevipof", "cevipov", "imp", "imprimerie", "offset", "prefet",
-#     "préfet", "vu",
-#     "madame", "monsieur", "mademoiselle",
-#     "cher", "chère", "chers", "chères",
-#     "compatriote", "compatriotes", "concitoyen", "concitoyenne", "concitoyens",
-#     "suppléant", "suppléante", "scrutin",
-#     "circonscription", "departement", "département",
-#     "candidature", "legislatif", "législatif", "mars", "election", "député", "jean",
-#     'front', 'national', 'parti', 'communiste', 'gauche', 'droite',
-#     'rassemblement', 'socialiste', 'democratique', 'independant',
-#     'jean', 'pierre', 'michel', 'jacques', 'bernard', 'maire',
-#     'conseiller', 'general', 'president', 'depute', 'dimanche', 'tour',
-#     "rpr", "udf", "pcf", "mrg", "mdc", "cpnt",
-# }
 
 EXTRA_STOPS = {
 
-    # --- Artefacts archivistiques Archelec ---
+    # --- Artefacts archivistiques ---
     "po", "cevipof", "cevipov", "imp", "imprimerie", "offset",
-    "prefet", "préfet", "vu", "sciences", "fonds",
+    "préfet", "vu", "sciences", "fonds",
 
-    # --- Formules d'adresse ---
+    # --- Formules d’adresse ---
     "madame", "monsieur", "mademoiselle",
     "cher", "chère", "chers", "chères",
     "compatriote", "compatriotes",
@@ -100,44 +84,52 @@ EXTRA_STOPS = {
 
     # --- Vocabulaire électoral générique ---
     "candidat", "candidate", "candidats", "candidates", "candidature",
-    "suppléant", "suppléante", "scrutin",
-    "election", "elections", "législatif", "legislatif",
-    "législatives", "legislatives",
-    "circonscription", "departement", "département",
-    "republique", "république", "francaise", "française",
-    "profession", "foi", "préfet",
+    "suppléant", "suppléante",
+    "scrutin", "élection", "élections",
+    "législatif", "législatives",
+    "circonscription", "département",
     "mars", "votez", "voter",
+    "profession", "foi",
 
-    # --- Mots politiques génériques (thème, pas parti) ---
-    "politique", "pays", "france", "français", "francais",
-    "française", "francaise",
+    # --- Politique générale ---
+    "politique", "pays", "france",
+    "français", "française", "république",
 
     # --- Prénoms très fréquents ---
     "jean", "pierre", "michel", "jacques", "bernard",
     "christian", "philippe", "claude", "paul", "andré",
 
-    # --- Fonctions électives génériques ---
-    "maire", "député", "depute", "conseiller", "président",
-    "president", "général", "general", "ministre",
+    # --- Fonctions électives ---
+    "maire", "député", "conseiller", "président",
+    "ministre", "général",
     "dimanche", "tour",
 
     # --- Sigles partisans ---
     "rpr", "udf", "cds", "cni", "cnip", "pr",
     "ps", "mrg", "mdc", "prg",
     "pcf",
-    "fn", "fnp",
+    "fn",
     "lo", "lcr", "pt",
-    "ge", "nerna", "mpf", "cpnt",
+    "mpf", "cpnt", "ge", "nerna",
 
-    # --- Stopwords grammaticaux français non couverts par spaCy ---
+    # --- Lexique partisan (non distinctif thématique) ---
+    "rassemblement", "union", "démocratie",
+    "centre", "démocrates", "sociaux", "indépendants",
+    "paysans", "parti", "républicain",
+    "chrétienne", "socialiste", "mouvement", "radicaux",
+    "citoyen", "citoyens",
+    "gauche", "droite",
+    "front", "national",
+
+    # --- Stopwords grammaticaux français ---
     "qu", "c", "d", "j", "l", "m", "n", "s", "t", "y",
     "une", "afin", "ainsi", "aussi", "encore", "déjà",
     "donc", "dont", "celui", "celle", "ceux",
-    "toute", "toutes", "tous", "tout",
+    "tout", "tous", "toute", "toutes",
     "cette", "cet", "entre", "sous", "sans", "très",
     "bien", "moins", "plus", "même",
 
-    # --- Stopwords allemands essentiels ---
+    # --- Stopwords allemands ---
     "die", "der", "und", "für", "den", "sie", "von",
     "das", "eine", "ist", "werden", "wir", "durch",
     "ein", "zum", "zur", "bei", "nach", "bis",
@@ -145,62 +137,89 @@ EXTRA_STOPS = {
     "haben", "sind", "dem", "nicht", "wird",
     "unsere", "unserer", "ihrer", "märz",
 
-    "rassemblement", "république", "republique", "union",
-    "démocratie", "democratie", "française", "francaise",
-    "centre", "démocrates", "democrates", "sociaux", "indépendants",
-    "independants", "paysans", "parti", "républicain", "republicain",
-    "chrétienne", "chretienne", "socialiste", "mouvement", "radicaux",
-    "citoyens", "citoyen", "gauche", "droite", "national", "front"
-
-    # Front national
-    "front",
-    "national",
-
-
-    "rpr",
-    "udf",
-    "cds",
-    "cni",
-    "cnip",
-    "pr",
-
-    # Gauche gouvernementale
-    "ps",
-    "mrg",
-    "mdc",
-    "prg",
-
-    # PCF
-    "pcf",
-
-    # Front national
-    "fn",
-
-    # Extrême gauche
-    "lo",
-    "lcr",
-    "pt",
-
-    "vouloir", "pouvoir", "devoir", "falloir", "savoir", "faire", "dire",
-    "aller", "voir", "venir", "mettre", "donner", "prendre", "tenir",
-    "porter", "passer", "comprendre", "être", "avoir", "sembler",
-    "paraître", "devenir", "rester", "exister", "appeler", "demander",
-    "proposer", "permettre", "attendre", "espérer", "penser", "croire",
-    "reprendre", "assurer", "agir", "paraître", "sembler", "revenir",
-    "partir", "arriver", "devoir", "falloir", "vouloir", "pouvoir"
+    # --- Verbes très génériques ---
+    "être", "avoir", "aller", "venir", "faire", "dire",
+    "vouloir", "pouvoir", "devoir", "falloir", "savoir",
+    "mettre", "donner", "prendre", "tenir", "porter",
+    "passer", "voir", "comprendre", "sembler", "paraître",
+    "devenir", "rester", "exister", "appeler", "demander",
+    "proposer", "permettre", "attendre", "espérer",
+    "penser", "croire", "reprendre", "assurer",
+    "agir", "revenir", "partir", "arriver",
 }
 
 
+# EXTRA_STOPS = {
+ 
+#     # --- Artefacts archivistiques Archelec ---
+#     # Présents dans les en-têtes de numérisation, aucune valeur textuelle
+#     "po", "cevipof", "cevipov", "imp", "imprimerie", "offset",
+#     "prefet", "préfet", "vu", "sciences", "fonds",
+ 
+#     # --- Formules d'adresse rhétoriques ---
+#     # Omniprésentes dans toutes les PF, aucun pouvoir discriminant
+#     "madame", "monsieur", "mademoiselle",
+#     "cher", "chère", "chers", "chères",
+#     "compatriote", "compatriotes",
+#     "concitoyen", "concitoyenne", "concitoyens",
+ 
+#     # --- Vocabulaire administratif électoral ---
+#     # Par définition présent dans quasiment 100% des PF
+#     "candidat", "candidate", "candidats", "candidates", "candidature",
+#     "suppléant", "suppléante", "scrutin",
+#     "election", "elections", "législatif", "legislatif",
+#     "législatives", "legislatives",
+#     "circonscription", "departement", "département",
+#     "profession", "foi",
+#     "mars",   # date du scrutin, présente partout, fréquence homogène entre partis
+#     "votez",  # appel au vote universel dans toutes les PF
+
+#     # --- Sigles partisans sans ambiguïté ---
+#     # Résidus après OCR, n'apportent rien au contenu thématique
+#     "rpr", "udf", "cds", "cni", "cnip",
+#     "mrg", "mdc", "prg",
+#     "pcf",
+#     "fn", "fnp",
+#     "lo", "lcr",
+#     "cpnt",
+ 
+#     # --- Stopwords grammaticaux français non couverts par spaCy ---
+#     # Tokens résiduels après tokenisation (apostrophes, élisions)
+#     "qu", "c", "d", "j", "l", "m", "n", "s", "t", "y",
+ 
+#     # --- Stopwords allemands essentiels ---
+#     # Les 137 docs alsaciens-mosellans sont exclus du corpus, mais ces tokens
+#     # peuvent subsister en faible quantité dans des docs bilingues partiels
+#     "die", "der", "und", "für", "den", "sie", "von",
+#     "das", "eine", "ist", "werden", "wir", "durch",
+#     "ein", "zum", "zur", "bei", "nach", "bis",
+#     "aus", "mit", "vom", "sich", "ich", "auf",
+#     "haben", "sind", "dem", "nicht", "wird",
+#     "unsere", "unserer", "ihrer", "märz",
+# }
+ 
+# NOTE : les mots suivants ont été délibérément EXCLUS de EXTRA_STOPS
+# car ils portent un signal analytique important pour le topic modeling :
+#
+# "france", "français", "nationale" — sur-représentés au FN (x9 vs Écologistes)
+# "vote", "voter"                   — plus fréquents au PCF et à l'extrême gauche
+# "politique", "pays"               — fréquence homogène mais contenu réel
+# "peuple"                          — marqueur idéologique PCF / extrême gauche
+# "national", "front", "socialiste" — noms propres de partis, signal fort
+# "gauche", "droite"                — positionnement politique explicite
+# verbes génériques (faire, voir...) — spaCy les lemmatise et les filtre via POS
+ 
+ 
 def build_lemmatizer(nlp):
     """
     Injecte les stopwords supplémentaires dans le vocabulaire spaCy
     et retourne la fonction de lemmatisation.
-
+ 
     Paramètres
     ----------
     nlp : spacy.Language
         Modèle spaCy français déjà chargé.
-
+ 
     Retour
     ------
     lemmatize : callable
@@ -208,7 +227,7 @@ def build_lemmatizer(nlp):
     """
     for word in EXTRA_STOPS:
         nlp.vocab[word].is_stop = True
-
+ 
     def lemmatize(text: str) -> list:
         """Retourne la liste de lemmes filtrés pour un texte donné."""
         doc = nlp(text)
@@ -219,14 +238,14 @@ def build_lemmatizer(nlp):
             and not token.is_stop
             and len(token) > 2
         ]
-
+ 
     return lemmatize
-
-
+ 
+ 
 # ============================================================
 # 3. NORMALISATION ET CLASSIFICATION DU SOUTIEN PARTISAN
 # ============================================================
-
+ 
 def strip_accents(text: str) -> str:
     """Supprime les accents. Ex : 'Écologie' -> 'Ecologie'."""
     if pd.isna(text):
@@ -235,8 +254,8 @@ def strip_accents(text: str) -> str:
         c for c in unicodedata.normalize("NFKD", str(text))
         if not unicodedata.combining(c)
     )
-
-
+ 
+ 
 def normalize_support(text: str) -> str:
     """
     Normalise une chaîne de soutien politique :
@@ -249,8 +268,8 @@ def normalize_support(text: str) -> str:
     text = re.sub(r"\s+",    " ", text)
     text = re.sub(r"\s*;\s*", ";", text)
     return text.strip()
-
-
+ 
+ 
 def split_supports(text: str) -> list:
     """Découpe un soutien multi-partis en liste de composantes."""
     text = normalize_support(text)
@@ -258,12 +277,12 @@ def split_supports(text: str) -> list:
         return ["non mentionne"]
     parts = [p.strip() for p in text.split(";") if p.strip()]
     return parts or ["non mentionne"]
-
-
+ 
+ 
 def classify_single_component(component: str) -> str:
     """
     Classe une composante individuelle de soutien dans une famille politique.
-
+ 
     Familles retournées :
     - 'Extrême gauche'
     - 'Front national'
@@ -276,10 +295,10 @@ def classify_single_component(component: str) -> str:
     - 'Autres'
     """
     c = normalize_support(component)
-
+ 
     if c in ("", "nan", "none", "non mentionne"):
         return "Non mentionné"
-
+ 
     patterns = {
         "Extrême gauche": [
             r"\blutte ouvriere\b", r"\bligue communiste revolutionnaire\b",
@@ -324,14 +343,14 @@ def classify_single_component(component: str) -> str:
             r"\bnon inscri[ts]+\b", r"\bapolitique\b",
         ],
     }
-
+ 
     for famille, regexps in patterns.items():
         if any(re.search(p, c) for p in regexps):
             return famille
-
+ 
     return "Autres"
-
-
+ 
+ 
 FAMILLES_FINALES = [
     "Droite parlementaire (RPR/UDF)",
     "Gauche gouvernementale (PS/MRG/MDC)",
@@ -344,12 +363,12 @@ FAMILLES_FINALES = [
     "Ambigu",
     "Autres",
 ]
-
-
+ 
+ 
 def classify_candidate_support(raw_support: str) -> pd.Series:
     """
     Classe le soutien d'un candidat dans une famille partisane unique.
-
+ 
     Logique de résolution des multi-soutiens :
     - Soutien unique            → famille directe
     - Multi-soutien cohérent   → famille commune
@@ -360,7 +379,7 @@ def classify_candidate_support(raw_support: str) -> pd.Series:
     families   = [classify_single_component(c) for c in components]
     unique_fam = list(dict.fromkeys(families))
     nb         = len(components)
-
+ 
     # Non mentionné
     if unique_fam == ["Non mentionné"]:
         return pd.Series({
@@ -369,7 +388,7 @@ def classify_candidate_support(raw_support: str) -> pd.Series:
             "famille_partisane": "Non mentionné", "flag_a_verifier": False,
             "raison_codage": "Soutien non mentionné",
         })
-
+ 
     # Soutien unique
     if nb == 1:
         return pd.Series({
@@ -378,7 +397,7 @@ def classify_candidate_support(raw_support: str) -> pd.Series:
             "famille_partisane": unique_fam[0], "flag_a_verifier": False,
             "raison_codage": "Soutien unique",
         })
-
+ 
     # Multi-soutien, même famille
     if len(unique_fam) == 1:
         return pd.Series({
@@ -387,7 +406,7 @@ def classify_candidate_support(raw_support: str) -> pd.Series:
             "famille_partisane": unique_fam[0], "flag_a_verifier": False,
             "raison_codage": "Multi-soutien cohérent",
         })
-
+ 
     # Une famille principale + résidus
     core = [f for f in unique_fam if f not in ("Autres", "Non mentionné")]
     if len(core) == 1:
@@ -398,7 +417,7 @@ def classify_candidate_support(raw_support: str) -> pd.Series:
             "famille_partisane": core[0], "flag_a_verifier": False,
             "raison_codage": "Famille principale + composantes résiduelles",
         })
-
+ 
     # Plusieurs familles fortes → ambigu
     return pd.Series({
         "soutiens_liste": components, "nb_soutiens": nb,
@@ -406,26 +425,26 @@ def classify_candidate_support(raw_support: str) -> pd.Series:
         "famille_partisane": "Ambigu", "flag_a_verifier": True,
         "raison_codage": "Plusieurs familles politiques : vérification manuelle requise",
     })
-
-
+ 
+ 
 # ============================================================
 # 4. MÉTRIQUES STYLISTIQUES
 # ============================================================
-
+ 
 def msttr(tokens: list, window: int = 100) -> float:
     """
     Mean Segmental Type-Token Ratio (MSTTR).
-
+ 
     Mesure la richesse lexicale sur des fenêtres de longueur fixe
     afin de s'affranchir de l'effet de la longueur du document.
-
+ 
     Paramètres
     ----------
     tokens : list[str]
         Liste de tokens (lemmes).
     window : int
         Taille de la fenêtre (défaut : 100).
-
+ 
     Retour
     ------
     float : score MSTTR ∈ [0, 1]
