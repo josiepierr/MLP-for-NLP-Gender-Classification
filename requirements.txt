@@ -7,3 +7,4 @@ seaborn
 wordcloud
 fr-core-news-sm
 fr_core_news_md
+langdetect
