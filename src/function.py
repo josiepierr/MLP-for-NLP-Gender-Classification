@@ -65,6 +65,28 @@ def clean_text_for_embeddings(text: str) -> str:
     return text
 
 
+
+
+def clean_text_for_style(text: str) -> str:
+    """
+    Nettoyage orienté stylométrie (notebook 04) :
+    - supprime uniquement les artefacts OCR Archelec (en-têtes, tampons)
+    - conserve la ponctuation (nécessaire pour segmenter les phrases)
+    - conserve la casse (majuscules, minuscules)
+    - conserve tous les mots fonctionnels, pronoms, formes verbales
+    - conserve les chiffres
+    NE PAS utiliser clean_text_lda ni clean_text_embeddings pour la stylométrie :
+    ces deux fonctions suppriment la ponctuation et les mots fonctionnels.
+    """
+    text = unicodedata.normalize("NFC", str(text))
+    for pattern, repl in OCR_PATTERNS:
+        text = re.sub(pattern, repl, text, flags=re.IGNORECASE)
+    # Supprimer les symboles parasites uniquement (pas la ponctuation)
+    text = re.sub(r"[\u2612\u2610\u2022\u25aa\u25a0\u25c6\u25cf\u00ab\u00bb\u201c\u201d\u201e]", " ", text)
+    # Normaliser les espaces sans toucher à la ponctuation
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
 # ============================================================
 # 2. LEMMATISATION
 # ============================================================
