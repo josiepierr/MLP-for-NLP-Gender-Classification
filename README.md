@@ -1,6 +1,5 @@
-# Analyse computationnelle des professions de foi — Législatives 1993
+# Analyse computationnelle des professions de foi - Législatives 1993
 
-**Dominique Noutsougankom · ENSAE Paris**
 
 Ce projet applique des méthodes de traitement automatique du langage naturel (NLP) au corpus Archelec des élections législatives françaises de 1993. L'objectif est double : identifier les structures thématiques qui structurent le discours partisan, et examiner si le sexe des candidats laisse une empreinte stylistique mesurable dans leurs professions de foi.
 
@@ -105,8 +104,3 @@ Les notebooks doivent être lancés dans l'ordre numérique. Le notebook 04 est 
 
 Les données Archelec sont mises à disposition par Sciences Po / CEVIPOF dans le cadre de leurs archives électorales. Elles ne sont pas redistribuées dans ce dépôt. Pour y accéder : [archelec.sciencespo.fr](https://archelec.sciencespo.fr).
 
----
-
-## Référence
-
->   *Analyse computationnelle du cadrage partisan et des variations stylistiques dans les professions de foi (Législatives 1993)*. Projet NLP, ENSAE Paris.
