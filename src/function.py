@@ -1,7 +1,7 @@
 """
 function.py
 ===========
-Fonctions utilitaires pour le projet NLP Archelec.
+Fonctions utilitaires.
 Utilisées dans les notebooks d'analyse du corpus Archelec 1993.
 """
  
@@ -37,7 +37,7 @@ def clean_text_for_lda(text: str) -> str:
     - suppression des chiffres isolés
     - normalisation des espaces
  
-    La casse est perdue volontairement — LDA travaille sur
+    La casse est perdue volontairement - LDA travaille sur
     des fréquences de lemmes, pas sur la forme de surface.
     """
     text = text.lower()
@@ -63,8 +63,27 @@ def clean_text_for_embeddings(text: str) -> str:
     text = re.sub(r"[^\w\s]",     " ", text)
     text = re.sub(r"\s+",         " ", text).strip()
     return text
- 
- 
+
+def clean_text_for_style(text: str) -> str:
+    """
+    Nettoyage orienté stylométrie (notebook 04) :
+    - supprime uniquement les artefacts OCR Archelec (en-têtes, tampons)
+    - conserve la ponctuation (nécessaire pour segmenter les phrases)
+    - conserve la casse (majuscules, minuscules)
+    - conserve tous les mots fonctionnels, pronoms, formes verbales
+    - conserve les chiffres
+    NE PAS utiliser clean_text_lda ni clean_text_embeddings pour la stylométrie :
+    ces deux fonctions suppriment la ponctuation et les mots fonctionnels.
+    """
+    text = unicodedata.normalize("NFC", str(text))
+    for pattern, repl in OCR_PATTERNS:
+        text = re.sub(pattern, repl, text, flags=re.IGNORECASE)
+    # Supprimer les symboles parasites uniquement (pas la ponctuation)
+    text = re.sub(r"[\u2612\u2610\u2022\u25aa\u25a0\u25c6\u25cf\u00ab\u00bb\u201c\u201d\u201e]", " ", text)
+    # Normaliser les espaces sans toucher à la ponctuation
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
 # ============================================================
 # 2. LEMMATISATION
 # ============================================================
@@ -149,67 +168,6 @@ EXTRA_STOPS = {
 }
 
 
-# EXTRA_STOPS = {
- 
-#     # --- Artefacts archivistiques Archelec ---
-#     # Présents dans les en-têtes de numérisation, aucune valeur textuelle
-#     "po", "cevipof", "cevipov", "imp", "imprimerie", "offset",
-#     "prefet", "préfet", "vu", "sciences", "fonds",
- 
-#     # --- Formules d'adresse rhétoriques ---
-#     # Omniprésentes dans toutes les PF, aucun pouvoir discriminant
-#     "madame", "monsieur", "mademoiselle",
-#     "cher", "chère", "chers", "chères",
-#     "compatriote", "compatriotes",
-#     "concitoyen", "concitoyenne", "concitoyens",
- 
-#     # --- Vocabulaire administratif électoral ---
-#     # Par définition présent dans quasiment 100% des PF
-#     "candidat", "candidate", "candidats", "candidates", "candidature",
-#     "suppléant", "suppléante", "scrutin",
-#     "election", "elections", "législatif", "legislatif",
-#     "législatives", "legislatives",
-#     "circonscription", "departement", "département",
-#     "profession", "foi",
-#     "mars",   # date du scrutin, présente partout, fréquence homogène entre partis
-#     "votez",  # appel au vote universel dans toutes les PF
-
-#     # --- Sigles partisans sans ambiguïté ---
-#     # Résidus après OCR, n'apportent rien au contenu thématique
-#     "rpr", "udf", "cds", "cni", "cnip",
-#     "mrg", "mdc", "prg",
-#     "pcf",
-#     "fn", "fnp",
-#     "lo", "lcr",
-#     "cpnt",
- 
-#     # --- Stopwords grammaticaux français non couverts par spaCy ---
-#     # Tokens résiduels après tokenisation (apostrophes, élisions)
-#     "qu", "c", "d", "j", "l", "m", "n", "s", "t", "y",
- 
-#     # --- Stopwords allemands essentiels ---
-#     # Les 137 docs alsaciens-mosellans sont exclus du corpus, mais ces tokens
-#     # peuvent subsister en faible quantité dans des docs bilingues partiels
-#     "die", "der", "und", "für", "den", "sie", "von",
-#     "das", "eine", "ist", "werden", "wir", "durch",
-#     "ein", "zum", "zur", "bei", "nach", "bis",
-#     "aus", "mit", "vom", "sich", "ich", "auf",
-#     "haben", "sind", "dem", "nicht", "wird",
-#     "unsere", "unserer", "ihrer", "märz",
-# }
- 
-# NOTE : les mots suivants ont été délibérément EXCLUS de EXTRA_STOPS
-# car ils portent un signal analytique important pour le topic modeling :
-#
-# "france", "français", "nationale" — sur-représentés au FN (x9 vs Écologistes)
-# "vote", "voter"                   — plus fréquents au PCF et à l'extrême gauche
-# "politique", "pays"               — fréquence homogène mais contenu réel
-# "peuple"                          — marqueur idéologique PCF / extrême gauche
-# "national", "front", "socialiste" — noms propres de partis, signal fort
-# "gauche", "droite"                — positionnement politique explicite
-# verbes génériques (faire, voir...) — spaCy les lemmatise et les filtre via POS
- 
- 
 def build_lemmatizer(nlp):
     """
     Injecte les stopwords supplémentaires dans le vocabulaire spaCy
@@ -376,9 +334,9 @@ def classify_candidate_support(raw_support: str) -> pd.Series:
     - Plusieurs familles fortes → 'Ambigu' (flag_a_verifier = True)
     """
     components = split_supports(raw_support)
-    families   = [classify_single_component(c) for c in components]
+    families = [classify_single_component(c) for c in components]
     unique_fam = list(dict.fromkeys(families))
-    nb         = len(components)
+    nb = len(components)
  
     # Non mentionné
     if unique_fam == ["Non mentionné"]:
